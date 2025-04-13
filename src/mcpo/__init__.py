@@ -2,7 +2,7 @@ import sys
 import asyncio
 import typer
 import os
-
+from dotenv import load_dotenv
 
 from typing_extensions import Annotated
 from typing import Optional, List
@@ -29,7 +29,14 @@ def main(
     env: Annotated[
         Optional[List[str]], typer.Option("--env", "-e", help="Environment variables")
     ] = None,
-    config: Annotated[
+    env_path: Annotated[
+        Optional[str],
+        typer.Option("--env-path", help="Path to environment variables file"),
+    ] = None,
+    server_type: Annotated[
+        Optional[str], typer.Option("--type", "--server-type", help="Server type")
+    ] = "stdio",
+    config_path: Annotated[
         Optional[str], typer.Option("--config", "-c", help="Config file path")
     ] = None,
     name: Annotated[
@@ -45,11 +52,14 @@ def main(
         Optional[str], typer.Option("--ssl-certfile", "-t", help="SSL certfile")
     ] = None,
     ssl_keyfile: Annotated[
-        Optional[str], typer.Option("--ssl-keyfile", "-k",  help="SSL keyfile")
+        Optional[str], typer.Option("--ssl-keyfile", "-k", help="SSL keyfile")
+    ] = None,
+    path_prefix: Annotated[
+        Optional[str], typer.Option("--path-prefix", help="URL prefix")
     ] = None,
 ):
     server_command = None
-    if not config:
+    if not config_path:
         # Find the position of "--"
         if "--" not in sys.argv:
             typer.echo("Usage: mcpo --host 0.0.0.0 --port 8000 -- your_mcp_command")
@@ -64,22 +74,41 @@ def main(
 
     from mcpo.main import run
 
-    if config:
-        print("Starting MCP OpenAPI Proxy with config file:", config)
+    if config_path:
+        print("Starting MCP OpenAPI Proxy with config file:", config_path)
     else:
         print(
             f"Starting MCP OpenAPI Proxy on {host}:{port} with command: {' '.join(server_command)}"
         )
 
-    env_dict = {}
-    if env:
-        for var in env:
-            key, value = env.split("=", 1)
-            env_dict[key] = value
+    try:
+        env_dict = {}
+        if env:
+            for var in env:
+                key, value = var.split("=", 1)
+                env_dict[key] = value
 
-    # Set environment variables
-    for key, value in env_dict.items():
-        os.environ[key] = value
+        if env_path:
+            # Load environment variables from the specified file
+            load_dotenv(env_path)
+            env_dict.update(dict(os.environ))
+
+        # Set environment variables
+        for key, value in env_dict.items():
+            os.environ[key] = value
+    except Exception as e:
+        pass
+
+    # Whatever the prefix is, make sure it starts and ends with a /
+    if path_prefix is None:
+        # Set default value
+        path_prefix = "/"
+    # if prefix doesn't end with a /, add it
+    if not path_prefix.endswith("/"):
+        path_prefix = f"{path_prefix}/"
+    # if prefix doesn't start with a /, add it
+    if not path_prefix.startswith("/"):
+        path_prefix = f"/{path_prefix}"
 
     # Run your async run function from mcpo.main
     asyncio.run(
@@ -88,13 +117,15 @@ def main(
             port,
             api_key=api_key,
             cors_allow_origins=cors_allow_origins,
-            config=config,
+            server_type=server_type,
+            config_path=config_path,
             name=name,
             description=description,
             version=version,
             server_command=server_command,
             ssl_certfile=ssl_certfile,
             ssl_keyfile=ssl_keyfile,
+            path_prefix=path_prefix,
         )
     )
 
