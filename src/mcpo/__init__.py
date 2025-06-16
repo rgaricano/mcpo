@@ -26,6 +26,12 @@ def main(
         Optional[str],
         typer.Option("--api-key", "-k", help="API key for authentication"),
     ] = None,
+    strict_auth: Annotated[
+        Optional[bool],
+        typer.Option(
+            "--strict-auth", help="API key protects all endpoints and documentation"
+        ),
+    ] = False,
     env: Annotated[
         Optional[List[str]], typer.Option("--env", "-e", help="Environment variables")
     ] = None,
@@ -52,10 +58,13 @@ def main(
         Optional[str], typer.Option("--ssl-certfile", "-t", help="SSL certfile")
     ] = None,
     ssl_keyfile: Annotated[
-        Optional[str], typer.Option("--ssl-keyfile", "-k", help="SSL keyfile")
+        Optional[str], typer.Option("--ssl-keyfile", "-K", help="SSL keyfile")
     ] = None,
     path_prefix: Annotated[
         Optional[str], typer.Option("--path-prefix", help="URL prefix")
+    ] = None,
+    headers: Annotated[
+        Optional[str], typer.Option("--header", "-H", help="Headers in JSON format")
     ] = None,
 ):
     server_command = None
@@ -116,6 +125,7 @@ def main(
             host,
             port,
             api_key=api_key,
+            strict_auth=strict_auth,
             cors_allow_origins=cors_allow_origins,
             server_type=server_type,
             config_path=config_path,
@@ -126,6 +136,7 @@ def main(
             ssl_certfile=ssl_certfile,
             ssl_keyfile=ssl_keyfile,
             path_prefix=path_prefix,
+            headers=headers,
         )
     )
 
