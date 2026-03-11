@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.20] - 2026-02-27
+
+### Added
+
+* 🔁 **MCP Connection Manager with Auto-Reconnect**: Introduced MCPConnectionManager to manage the full lifecycle of MCP client sessions and transports. Connections that drop due to a ClosedResourceError are now automatically re-established and retried transparently, eliminating manual restarts for intermittent server disconnects.
+* 🔄 **Automatic Retry on Closed Sessions**: Tool calls that encounter a ClosedResourceError will now automatically reconnect to the MCP server and retry the call, providing resilient end-to-end execution without user intervention.
+
+### Changed
+
+* 🧩 **Normalized disabledTools Configuration Key**: The disabled tools setting now accepts both camelCase (disabledTools) and snake_case (disabled_tools) in the config file for backwards compatibility and consistency with other configuration keys.
+* 🧹 **Simplified Tool Handler Architecture**: Refactored get_tool_handler to remove the session parameter and nested factory functions in favor of a cleaner design that resolves the session from the request app state at call time, enabling reconnect-aware tool execution.
+* 🛡️ **Guarded Lifespan Startup During Hot Reload**: The reload handler now checks for the presence of an async context manager before awaiting sub-app lifespan startup, preventing errors when lifespan context is unavailable.
+
+### Fixed
+
+* 🪛 **Fixed Erroneous Validation Raise in disabledTools**: Removed a misplaced raise statement in validate_server_config that would always throw an error after validating disabled_tools, even when the configuration was correct.
+* 🧯 **Graceful Handling of asyncio.CancelledError**: Added explicit CancelledError handling during server creation and lifespan startup to properly roll back routes and log errors instead of crashing silently.
+
 ## [0.0.19] - 2025-10-14
 
 ### Fixed
